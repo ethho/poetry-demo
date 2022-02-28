@@ -1,3 +1,22 @@
+# Poetry Demo
+
+This repository contains a demonstration for how to initialize a basic Python package.
+
+## Features
+
+- Runs pytests on pushes to default branch
+- Deployment to PyPI when a version tag (`v.*.*`) is pushed
+- Pip installable from source: `pip install -e .`
+
+## Tools Used in this Repository
+
+- Virtual environment, package management, and PyPI deployment using [`poetry`](https://python-poetry.org/)
+- Unit testing using [`pytest`](https://pytest.org) and [`tox`](https://tox.wiki/en/latest/)
+- Automated testing and PyPI deployments using GitHub Actions CI/CD
+
+## Tutorial
+
+Initialize git and poetry interactively
 ```console
 $ git init
 Initialized empty Git repository in /home/eho/ripl/repos/poetry-demo/.git/
@@ -83,9 +102,11 @@ build-backend = "poetry.core.masonry.api"
 
 
 Do you confirm generation? (yes/no) [yes] 
-$ git co -- Makefile            
-$ ls
-pyproject.toml
+```
+
+We then install the dependencies that we defined in the above `pyproject.toml` file:
+
+```console
 $ poetry install
 Creating virtualenv poetry-demo-rPLVa0Kh-py3.8 in /home/eho/.cache/pypoetry/virtualenvs
 Updating dependencies
@@ -105,8 +126,19 @@ Package operations: 10 installs, 0 updates, 0 removals
   • Installing pytest (7.0.1)
   • Installing python-dotenv (0.19.2)
   • Installing pytest-dotenv (0.5.2)
-$ mkdir poetry-demo tests
-$ touch poetry-demo/__init__.py poetry-demo/__main__.py
+```
+
+We can now add our package source code to a subdirectory named `poetry_demo`. Note that the module directory should be snake_cased.
+
+```
+$ mkdir poetry_demo
+$ touch poetry_demo/__init__.py poetry_demo/__main__.py
+$ echo 'import pandas as pd' > poetry_demo/__init__.py
+```
+
+Note that we're importing `pandas` in our package. Poetry makes it easy to add package dependencies:
+
+```console
 $ poetry add pandas
 Using version ^1.4.1 for pandas
 
@@ -122,38 +154,25 @@ Package operations: 5 installs, 0 updates, 0 removals
   • Installing python-dateutil (2.8.2)
   • Installing pytz (2021.3)
   • Installing pandas (1.4.1)
-$ echo 'import pandas as pd' > poetry-demo/__init__.py
+```
+
+Let's set up testing for this package. We will do this by following the canonical file structure for [pytest](https://docs.pytest.org/en/7.0.x/explanation/goodpractices.html#choosing-a-test-layout-import-rules). We can 
+
+```console
+$ mkdir tests
 $ echo 'import poetry_demo' > tests/test_import.py      
-$ mv poetry-demo poetry_demo
-$ poetry run pytest                         
-======================================= test session starts ========================================
-platform linux -- Python 3.8.10, pytest-7.0.1, pluggy-1.0.0
-rootdir: /home/eho/ripl/repos/poetry-demo
-plugins: dotenv-0.5.2
-collected 0 items / 1 error                                                                        
+```
 
-============================================== ERRORS ==============================================
-______________________________ ERROR collecting tests/test_import.py _______________________________
-ImportError while importing test module '/home/eho/ripl/repos/poetry-demo/tests/test_import.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-/usr/lib/python3.8/importlib/__init__.py:127: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-tests/test_import.py:1: in <module>
-    import poetry_demo
-E   ModuleNotFoundError: No module named 'poetry_demo'
-===================================== short test summary info ======================================
-ERROR tests/test_import.py
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-========================================= 1 error in 0.08s =========================================
-$ ls
-poetry_demo  poetry.lock  pyproject.toml  tests
-$ poetry install    
-Installing dependencies from lock file
+We can install `pytest` as a development dependency. This means that it will be installed when a developer (or CI workflow) runs `poetry install` from the repository root, but it will not be included in the build. We'll also install `pytest-dotenv` so that environment vars in a `.env` file will be available in pytests.
 
-No dependencies to install or update
+```console
+$ poetry add --dev pytest pytest-dotenv
+$ echo 'ENV_USED_IN_PYTESTS=0' > .env
+```
 
-Installing the current project: poetry-demo (0.1.0)
+Prefixing commands with `poetry run` runs them in the poetry-managed virtual environment. Let's run our test suite:
+
+```console
 $ poetry run pytest 
 ======================================= test session starts ========================================
 platform linux -- Python 3.8.10, pytest-7.0.1, pluggy-1.0.0
@@ -162,6 +181,11 @@ plugins: dotenv-0.5.2
 collected 0 items                                                                                  
 
 ====================================== no tests ran in 0.36s =======================================
+```
+
+Similarly, we can invoke `.py` scripts, open an interactive `ipython` session, or open an interactive shell environment (similar to `source my_virtual_env/bin/activate`):
+
+```console
 $ poetry run python3 poetry_demo/__main__.py
 $ poetry run ipython                        
 /home/eho/.local/lib/python3.8/site-packages/IPython/core/interactiveshell.py:802: UserWarning: Attempting to work in a virtualenv. If you encounter problems, please install IPython inside the virtualenv.
@@ -177,8 +201,11 @@ Do you really want to exit ([y]/n)? y
 $ poetry shell       
 Spawning shell within /home/eho/.cache/pypoetry/virtualenvs/poetry-demo-rPLVa0Kh-py3.8
 $ deactivate   
-$ poetry publish                 
-No files to publish. Run poetry build first or use the --build option.
+```
+
+We can use poetry to build and publish the package to PyPI. All we need are our PyPI credentials:
+
+```console
 $ poetry build         
 Building poetry-demo (0.1.0)
   - Building sdist
@@ -190,6 +217,10 @@ $ poetry publish
 No suitable keyring backends were found
 Using a plaintext file to store and retrieve credentials
 Username: ^C%                                                                                       
+```
+
+We can automate PyPI deployment using GitHub Actions continuous integration and deployment (CI/CD). The deployment will trigger when we push git tags that match the glob query `v.*.*`.
+```console
 $ mkdir -p .github/workflows                             
 $ touch .github/workflows/pypi.yaml                      
 $ code .github/workflows/pypi.yaml
@@ -218,40 +249,14 @@ jobs:
         uses: JRubics/poetry-publish@v1.8
         with:
           pypi_token: ${{ secrets.PYPI_TOKEN }}% 
-$ wget https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore .gitignore
---2022-02-28 15:00:34--  https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
-Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.111.133, 185.199.108.133, 185.199.109.133, ...
-Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.111.133|:443... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: 2762 (2.7K) [text/plain]
-Saving to: ‘Python.gitignore’
+```
 
-Python.gitignore         100%[==================================>]   2.70K  --.-KB/s    in 0.001s  
+Note that we would need to enter a valid [PyPI API token](https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/?highlight=access%20token#saving-credentials-on-github) in GitHub secrets under the name `PYPI_TOKEN`.
 
-2022-02-28 15:00:35 (2.12 MB/s) - ‘Python.gitignore’ saved [2762/2762]
+Also note that as of writing, GitHub Actions offers unlimited Actions executions free of charge for public repositories.
 
---2022-02-28 15:00:35--  http://.gitignore/
-Resolving .gitignore (.gitignore)... failed: Name or service not known.
-wget: unable to resolve host address ‘.gitignore’
-FINISHED --2022-02-28 15:00:35--
-Total wall clock time: 0.1s
-Downloaded: 1 files, 2.7K in 0.001s (2.12 MB/s)
-$ ls
-dist  poetry_demo  poetry.lock  pyproject.toml  Python.gitignore  tests
-$ ll                    
-total 56K
-drwxr-xr-x 8 eho eho 4.0K Feb 28 15:00 .
-drwxr-xr-x 9 eho eho 4.0K Feb 28 14:48 ..
-drwxr-xr-x 2 eho eho 4.0K Feb 28 14:56 dist
-drwxr-xr-x 7 eho eho 4.0K Feb 28 14:49 .git
-drwxr-xr-x 3 eho eho 4.0K Feb 28 14:57 .github
-drwxr-xr-x 3 eho eho 4.0K Feb 28 14:55 poetry_demo
--rw-r--r-- 1 eho eho  15K Feb 28 14:52 poetry.lock
--rw-r--r-- 1 eho eho  404 Feb 28 14:52 pyproject.toml
-drwxr-xr-x 3 eho eho 4.0K Feb 28 14:54 .pytest_cache
--rw-r--r-- 1 eho eho 2.7K Feb 28 15:00 Python.gitignore
-drwxr-xr-x 3 eho eho 4.0K Feb 28 14:54 tests
-$ mv Python.gitignore .gitignore
+Let's do some more work on our testing environment. [`tox`](https://tox.wiki/en/latest/) allows us to test our package against multiple Python versions, and it integrates with `poetry` and GitHub Actions. All we need is to install `tox` (`pip install tox`) and write a `tox.ini` file at the repository root:
+```console
 $ touch tox.ini                      
 $ code tox.ini  
 $ cat tox.ini
@@ -264,7 +269,7 @@ allowlist_externals =
     poetry
 commands =
     poetry install 
-        ; Check that the package is importable
+	; Check that the package is importable
     poetry run python -c 'import poetry_demo'
     poetry run pytest %                                                                                
 $ tox          
@@ -304,4 +309,82 @@ collected 0 items
 ERROR: InvocationError for command /home/eho/.poetry/bin/poetry run pytest (exited with code 5)
 _______________________________________________ summary _______________________________________________
 ERROR:   py38: commands failed
+```
+
+Tox reports failure because we don't have any real pytests (functions named like `test_*`) in the directory `./tests`.
+We can set up a GitHub Actions workflow that automatically runs tox on pushes to pull requests or the `main` branch:
+
+```console
+$ touch .github/workflows/tox.yaml
+$ code .github/workflows/tox.yaml
+$ cat .github/workflows/tox.yaml
+name: Tox
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'docsrc/**'
+
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'docsrc/**'
+
+jobs:
+  test:
+    name: Run unit tests in tox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.7
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.7'
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+      - name: Install Python dependencies
+        run: python -m pip install -q poetry tox
+      - name: Run all tox tests
+        if: github.event_name != 'pull_request'
+        run: tox --
+      - name: Run tox tests (fast only)
+```
+
+Finally, we'll add a standard Python `.gitignore` file and create our first git commit.
+
+```console
+$ wget https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore 
+--2022-02-28 15:00:34--  https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.111.133, 185.199.108.133, 185.199.109.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.111.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 2762 (2.7K) [text/plain]
+Saving to: ‘Python.gitignore’
+
+Python.gitignore         100%[==================================>]   2.70K  --.-KB/s    in 0.001s  
+
+2022-02-28 15:00:35 (2.12 MB/s) - ‘Python.gitignore’ saved [2762/2762]
+
+--2022-02-28 15:00:35--  http://.gitignore/
+Resolving .gitignore (.gitignore)... failed: Name or service not known.
+wget: unable to resolve host address ‘.gitignore’
+FINISHED --2022-02-28 15:00:35--
+Total wall clock time: 0.1s
+Downloaded: 1 files, 2.7K in 0.001s (2.12 MB/s)
+$ mv Python.gitignore .gitignore
+$ git add .
+$ git commit -m 'Initial commit'
 ```
