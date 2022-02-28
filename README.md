@@ -156,7 +156,7 @@ Package operations: 5 installs, 0 updates, 0 removals
   • Installing pandas (1.4.1)
 ```
 
-Let's set up testing for this package. We will do this by following the canonical file structure for [pytest](https://docs.pytest.org/en/7.0.x/explanation/goodpractices.html#choosing-a-test-layout-import-rules). We can 
+Let's set up testing for this package. We will do this by following the canonical file structure for [pytest](https://docs.pytest.org/en/7.0.x/explanation/goodpractices.html#choosing-a-test-layout-import-rules). 
 
 ```console
 $ mkdir tests
@@ -363,7 +363,7 @@ jobs:
       - name: Run tox tests (fast only)
 ```
 
-Finally, we'll add a standard Python `.gitignore` file and create our first git commit.
+We'll add a standard Python `.gitignore` file:
 
 ```console
 $ wget https://raw.githubusercontent.com/github/gitignore/main/Python.gitignore 
@@ -377,14 +377,28 @@ Saving to: ‘Python.gitignore’
 Python.gitignore         100%[==================================>]   2.70K  --.-KB/s    in 0.001s  
 
 2022-02-28 15:00:35 (2.12 MB/s) - ‘Python.gitignore’ saved [2762/2762]
-
---2022-02-28 15:00:35--  http://.gitignore/
-Resolving .gitignore (.gitignore)... failed: Name or service not known.
-wget: unable to resolve host address ‘.gitignore’
 FINISHED --2022-02-28 15:00:35--
 Total wall clock time: 0.1s
 Downloaded: 1 files, 2.7K in 0.001s (2.12 MB/s)
 $ mv Python.gitignore .gitignore
+```
+
+Finally, we create our first git commit and push our changes to a new GitHub repository using the [GitHub CLI](https://cli.github.com/).
+
+```console
 $ git add .
 $ git commit -m 'Initial commit'
+❯ gh repo create                  
+? What would you like to do? Push an existing local repository to GitHub
+? Path to local repository .
+? Repository name poetry-demo
+? Description Example Python package using poetry, tox, and GitHub Actions
+? Visibility Public
+✓ Created repository ethho/poetry-demo on GitHub
+? Add a remote? Yes
+? What should the new remote be called? origin
+✓ Added remote git@github.com:ethho/poetry-demo.git
+? Would you like to push commits from the current branch to the "origin"? Yes
+✓ Pushed commits to git@github.com:ethho/poetry-demo.git
+$ gh repo view --web
 ```
