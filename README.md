@@ -20,6 +20,8 @@ Initialize git and poetry interactively
 ```console
 $ git init
 Initialized empty Git repository in /home/eho/ripl/repos/poetry-demo/.git/
+$ git checkout -b main
+$ git branch -d master
 $ poetry init                                
 
 This command will guide you through creating your pyproject.toml config.
